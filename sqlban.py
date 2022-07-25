@@ -70,18 +70,6 @@ def check_if_the_db_exists():
     return os.path.exists(DB_FILE)
 
 
-def get_country_from_ip(ip):
-    """Get the country from the IP
-    """
-    if VERBOSE:
-        print("Getting the country from IP {}".format(ip))
-
-    api_url = "https://json.geoiplookup.io/{}".format(ip)
-    response = urllib.request.urlopen(api_url)
-    data = json.loads(response.read())
-    return data["country"]
-
-
 def initialise_database():
     """Initialise the database
     """
@@ -91,7 +79,7 @@ def initialise_database():
     # Connect to the database
     connection = sqlite3.connect(DB_FILE)
     cursor = connection.cursor()
-    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, last_ban_date TEXT, is_currently_banned INTEGER, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, isp TEXT);")
+    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, first_ban_date TEXT, last_ban_date TEXT, is_currently_banned INTEGER, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, longitude REAL, latitude REAL, isp TEXT);")
     connection.commit()
     connection.close()
 
@@ -139,8 +127,10 @@ def insert_ip_in_db(ip):
         country = data["country_name"]
         region = data["region"]
         isp = data["isp"]
-        cursor.execute("INSERT INTO sqlban (ip, last_jail_name, last_ban_date, is_currently_banned, connection_attempts_numbers, ban_numbers, cumulative_bantime, country, region, isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                       (ip, JAILNAME, BANDATE, 1,ATTEMPTS, 1, BANTIME, country, region, isp))
+        latitude = data["latitude"]
+        longitude = data["longitude"]
+        cursor.execute("INSERT INTO sqlban (ip, last_jail_name, first_ban_date, last_ban_date, is_currently_banned, connection_attempts_numbers, ban_numbers, cumulative_bantime, country, region, longitude, latitude, isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (ip, JAILNAME, BANDATE, BANDATE, 1,ATTEMPTS, 1, BANTIME, country, region, longitude, latitude, isp))
 
 def delete_ip_from_db(ip):
     """Delete the IP from the database
