@@ -8,6 +8,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import datetime
+import pytz
 
 # Constants
 DB_FILE = "sqlban.db"
@@ -57,7 +58,7 @@ BANTIME = args.bantime
 
 JAILNAME = args.jailname
 
-BANDATE = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+BANDATE = datetime.datetime.now().isoformat()
 
 
 def check_if_the_db_exists():
