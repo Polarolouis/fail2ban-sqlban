@@ -1,5 +1,4 @@
 import argparse
-from multiprocessing import connection
 import re
 import sys
 import sqlite3
@@ -8,8 +7,7 @@ import json
 import urllib.request
 import urllib.parse
 import urllib.error
-
-from numpy import insert
+import datetime
 
 # Constants
 DB_FILE = "sqlban.db"
@@ -59,6 +57,8 @@ BANTIME = args.bantime
 
 JAILNAME = args.jailname
 
+BANDATE = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
 def check_if_the_db_exists():
     """Check if the database exists
@@ -91,7 +91,7 @@ def initialise_database():
     # Connect to the database
     connection = sqlite3.connect(DB_FILE)
     cursor = connection.cursor()
-    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, isp TEXT);")
+    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, last_ban_date TEXT, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, isp TEXT);")
     connection.commit()
     connection.close()
 
@@ -132,15 +132,15 @@ def insert_ip_in_db(ip):
         print("Inserting IP {} in the database".format(ip))
     if check_ip_in_db(ip):
         print("IP {} is already in the database, increasing the attempts and ban numbers".format(ip))
-        cursor.execute("UPDATE sqlban SET connection_attempts_numbers = connection_attempts_numbers + ?, ban_numbers = ban_numbers + 1, cumulative_bantime = cumulative_bantime + ? WHERE ip = ?", (ATTEMPTS, BANTIME, ip))
+        cursor.execute("UPDATE sqlban SET last_jail_name = ?, last_ban_date = ?, connection_attempts_numbers = connection_attempts_numbers + ?, ban_numbers = ban_numbers + 1, cumulative_bantime = cumulative_bantime + ? WHERE ip = ?", (JAILNAME, BANDATE, ATTEMPTS, BANTIME, ip))
     else:
         print("IP {} is not in the database, inserting it".format(ip))
         data = ip_lookup(ip)
         country = data["country_name"]
         region = data["region"]
         isp = data["isp"]
-        cursor.execute("INSERT INTO sqlban (ip, last_jail_name, connection_attempts_numbers, ban_numbers, cumulative_bantime, country, region, isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                       (ip, JAILNAME, ATTEMPTS, 1, BANTIME, country, region, isp))
+        cursor.execute("INSERT INTO sqlban (ip, last_jail_name, last_ban_date, connection_attempts_numbers, ban_numbers, cumulative_bantime, country, region, isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (ip, JAILNAME, BANDATE, ATTEMPTS, 1, BANTIME, country, region, isp))
 
 def delete_ip_from_db(ip):
     """Delete the IP from the database
