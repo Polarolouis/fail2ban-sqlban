@@ -18,8 +18,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose",
                     action='store_true',
                     help="Activate verbose mode")
-parser.add_argument("action", metavar="ACTION", help="The action to perform: check, insert, delete", choices=[
-                    "check", "insert", "delete"])
+parser.add_argument("action", metavar="ACTION", help="The action to perform: check, insert, delete, unban", choices=[
+                    "check", "insert", "delete", "unban"])
 parser.add_argument("ip", metavar="IP",
                     help="The IP address on which the action should be performed")
 parser.add_argument("-a", "--attempts", metavar="ATTEMPTS",
@@ -91,7 +91,7 @@ def initialise_database():
     # Connect to the database
     connection = sqlite3.connect(DB_FILE)
     cursor = connection.cursor()
-    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, last_ban_date TEXT, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, isp TEXT);")
+    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, last_ban_date TEXT, is_currently_banned INTEGER, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, isp TEXT);")
     connection.commit()
     connection.close()
 
@@ -132,15 +132,15 @@ def insert_ip_in_db(ip):
         print("Inserting IP {} in the database".format(ip))
     if check_ip_in_db(ip):
         print("IP {} is already in the database, increasing the attempts and ban numbers".format(ip))
-        cursor.execute("UPDATE sqlban SET last_jail_name = ?, last_ban_date = ?, connection_attempts_numbers = connection_attempts_numbers + ?, ban_numbers = ban_numbers + 1, cumulative_bantime = cumulative_bantime + ? WHERE ip = ?", (JAILNAME, BANDATE, ATTEMPTS, BANTIME, ip))
+        cursor.execute("UPDATE sqlban SET last_jail_name = ?, last_ban_date = ?, is_currently_banned = 1, connection_attempts_numbers = connection_attempts_numbers + ?, ban_numbers = ban_numbers + 1, cumulative_bantime = cumulative_bantime + ? WHERE ip = ?", (JAILNAME, BANDATE, ATTEMPTS, BANTIME, ip))
     else:
         print("IP {} is not in the database, inserting it".format(ip))
         data = ip_lookup(ip)
         country = data["country_name"]
         region = data["region"]
         isp = data["isp"]
-        cursor.execute("INSERT INTO sqlban (ip, last_jail_name, last_ban_date, connection_attempts_numbers, ban_numbers, cumulative_bantime, country, region, isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                       (ip, JAILNAME, BANDATE, ATTEMPTS, 1, BANTIME, country, region, isp))
+        cursor.execute("INSERT INTO sqlban (ip, last_jail_name, last_ban_date, is_currently_banned, connection_attempts_numbers, ban_numbers, cumulative_bantime, country, region, isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (ip, JAILNAME, BANDATE, 1,ATTEMPTS, 1, BANTIME, country, region, isp))
 
 def delete_ip_from_db(ip):
     """Delete the IP from the database
@@ -148,6 +148,33 @@ def delete_ip_from_db(ip):
     if VERBOSE:
         print("Deleting IP {} from the database".format(ip))
     cursor.execute("DELETE FROM sqlban WHERE ip = ?", (ip,))
+
+def is_ip_banned(ip):
+       cursor.execute("SELECT is_currently_banned FROM sqlban WHERE ip = ?", (ip,))
+       result = cursor.fetchone()[0]
+       if VERBOSE:
+           print(f"Checking if {ip} is banned")
+       if result == 0:
+           if VERBOSE:
+               print(f"{ip} is not banned")
+           return False
+       else:
+           if VERBOSE:
+               print(f"{ip} is banned")
+           return True
+
+def unban_ip_in_db(ip):
+    """Marks the IP as unbanned in the database
+    """
+    if not check_ip_in_db(ip):
+        print(f"Error: {ip} not registered in database")
+        sys.exit(1)
+    if not is_ip_banned(ip):
+        print(f"{ip} is not banned, aborting")
+        return
+    if VERBOSE:
+        print(f"Marking the IP {ip} as unbanned in the database")
+    cursor.execute("UPDATE sqlban SET is_currently_banned = 0 WHERE ip = ?", (ip,))
 
 
 # --- Main program ---
@@ -171,6 +198,8 @@ elif ACTION == "insert":
     insert_ip_in_db(IP)
 elif ACTION == "delete":
     delete_ip_from_db(IP)
+elif ACTION == "unban":
+    unban_ip_in_db(IP)
 else:
     print("Invalid action")
     connection.commit()
