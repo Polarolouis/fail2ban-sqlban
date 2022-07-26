@@ -10,8 +10,9 @@ import urllib.error
 import time
 
 # Constants
-PATH = "/data/scripts/sqlban/"
-DB_FILE = PATH + "sqlban.db"
+#DIRECTORY = "/data/scripts/sqlban/"
+DIRECTORY = "./"
+DB_FILE = DIRECTORY + "sqlban.db"
 
 # Initialisation of the argument parser
 parser = argparse.ArgumentParser()
@@ -199,4 +200,10 @@ else:
 
 connection.commit()
 connection.close()
+
+st_db = os.stat(DB_FILE)
+
+if st_db.st_uid != 0 or st_db.st_gid != 472:
+    os.chown(DB_FILE, 0, 472)
+
 sys.exit(0)
