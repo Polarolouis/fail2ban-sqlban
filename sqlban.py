@@ -8,7 +8,6 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import datetime
-import pytz
 
 # Constants
 DB_FILE = "sqlban.db"
