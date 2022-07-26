@@ -10,7 +10,8 @@ import urllib.error
 import datetime
 
 # Constants
-DB_FILE = "sqlban.db"
+PATH = "/data/scripts/sqlban/"
+DB_FILE = PATH + "sqlban.db"
 
 # Initialisation of the argument parser
 parser = argparse.ArgumentParser()
