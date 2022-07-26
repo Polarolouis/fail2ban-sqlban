@@ -10,8 +10,7 @@ import urllib.error
 import time
 
 # Constants
-#DIRECTORY = "/data/scripts/sqlban/"
-DIRECTORY = "./"
+DIRECTORY = "/data/scripts/sqlban/"
 DB_FILE = DIRECTORY + "sqlban.db"
 
 # Initialisation of the argument parser
