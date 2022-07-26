@@ -205,4 +205,7 @@ st_db = os.stat(DB_FILE)
 if st_db.st_uid != 0 or st_db.st_gid != 472:
     os.chown(DB_FILE, 0, 472)
 
+if oct(st_db.st_mode)[-3:] != "664":
+    os.chmod(DB_FILE, 436)
+
 sys.exit(0)
