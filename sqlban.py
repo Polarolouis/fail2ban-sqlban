@@ -7,10 +7,11 @@ import json
 import urllib.request
 import urllib.parse
 import urllib.error
-import datetime
+import time
 
 # Constants
-PATH = "/data/scripts/sqlban/"
+#PATH = "/data/scripts/sqlban/"
+PATH = "./"
 DB_FILE = PATH + "sqlban.db"
 
 # Initialisation of the argument parser
@@ -58,7 +59,7 @@ BANTIME = args.bantime
 
 JAILNAME = args.jailname
 
-BANDATE = datetime.datetime.now().isoformat()
+BANDATE = int(time.time())
 
 
 def check_if_the_db_exists():
@@ -80,7 +81,7 @@ def initialise_database():
     # Connect to the database
     connection = sqlite3.connect(DB_FILE)
     cursor = connection.cursor()
-    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, first_ban_date TEXT, last_ban_date TEXT, is_currently_banned INTEGER, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, longitude REAL, latitude REAL, isp TEXT);")
+    cursor.execute("CREATE TABLE sqlban (id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, last_jail_name TEXT, first_ban_date INTEGER, last_ban_date INTEGER, is_currently_banned INTEGER, connection_attempts_numbers INTEGER, ban_numbers INTEGER, cumulative_bantime INTEGER, country TEXT, region TEXT, longitude REAL, latitude REAL, isp TEXT);")
     connection.commit()
     connection.close()
 
